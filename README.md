@@ -2,7 +2,7 @@
 
 > Compiler Design course project. Write an ML workflow in a small DSL and compile it through every classic compiler phase: lexing, parsing, semantic analysis, IR optimization, code generation and execution.
 
-**Live demo:** https://YOUR-USERNAME.github.io/YOUR-REPO/
+**Live demo:** https://sharmaaensh015-hash.github.io/ml-pipeline-compiler-new/
 
 ## Why this project
 ML workflows are usually hand-written, framework-specific scripts. Mistakes such as wrong stage order, repeated transformations or data leakage surface late, at run time. MLPipe treats the workflow as a *program*: it is validated early, optimized as an IR, and then turned into code.
