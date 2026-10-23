@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MLPipe — Compiler for End-to-End ML Pipelines</title>
+<style>
+:root{--bg:#121B2E;--card:#1D2942;--bd:#3A4967;--tx:#F8FAFC;--mu:#A0AEC6;--bl:#487EE0;--gr:#4CBE89;--or:#EFA34E;--te:#3FC4D3;--rd:#E25E69}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,Segoe UI,Arial,sans-serif}
+header{padding:28px 5vw 8px}h1{margin:0;font-size:clamp(22px,3.4vw,34px)}h1 span{color:var(--te)}
+.sub{color:var(--mu);margin:4px 0 0}
+main{display:grid;grid-template-columns:minmax(300px,5fr) 7fr;gap:18px;padding:14px 5vw 30px}
+@media(max-width:900px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;min-width:0}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+select,button{background:#0f1729;color:var(--tx);border:1px solid var(--bd);border-radius:7px;padding:8px 12px;font:inherit;cursor:pointer}
+button.run{background:var(--te);color:#06202a;font-weight:700;border:0}
+textarea{width:100%;height:430px;resize:vertical;background:#0c1322;color:#dce4f0;border:1px solid var(--bd);border-radius:8px;padding:12px;font:13.5px/1.55 ui-monospace,Consolas,monospace;tab-size:4}
+.stages{display:flex;gap:6px;flex-wrap:wrap;padding:0 5vw}
+.chip{padding:5px 12px;border-radius:99px;border:1px solid var(--bd);color:var(--mu);font-size:13px;font-weight:600}
+.chip.ok{border-color:var(--gr);color:var(--gr);background:#4cbe891a}.chip.fail{border-color:var(--rd);color:var(--rd);background:#e25e691a}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
+.tabs button{border-radius:7px 7px 0 0;color:var(--mu)}.tabs button.on{color:var(--tx);border-color:var(--te);background:#3fc4d31f}
+pre{margin:0;white-space:pre-wrap;word-break:break-word;font:13px/1.55 ui-monospace,Consolas,monospace;color:#dce4f0;max-height:520px;overflow:auto}
+table{border-collapse:collapse;width:100%;font:12.5px ui-monospace,Consolas,monospace}td,th{padding:3px 8px;border-bottom:1px solid #2a3753;text-align:left}th{color:var(--mu)}
+.t-KEYWORD{color:var(--bl)}.t-IDENTIFIER{color:var(--gr)}.t-STRING{color:var(--or)}.t-NUMBER{color:var(--te)}.t-SYMBOL,.t-OPERATOR{color:var(--rd)}
+.diag{border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:14px}
+.diag.err{background:#e25e691f;border:1px solid var(--rd)}.diag.good{background:#4cbe891a;border:1px solid var(--gr)}
+.ok{color:var(--gr)}.wn{color:var(--or)}.er{color:var(--rd)}
+.met{display:grid;grid-template-columns:100px 1fr 60px;gap:10px;align-items:center;margin:8px 0}
+.bar{height:14px;background:#0c1322;border-radius:7px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--bl),var(--te))}
+.kv{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 12px}.kv div{background:#0c1322;border:1px solid var(--bd);border-radius:8px;padding:8px 12px}.kv b{display:block;font-size:18px}
+small,.mu{color:var(--mu)}footer{padding:0 5vw 28px;color:var(--mu);font-size:13px}
+.hero{background:radial-gradient(900px 320px at 8% -30%,#3fc4d340,transparent),radial-gradient(700px 300px at 95% 0,#487ee040,transparent);padding-bottom:18px}
+.badge{display:inline-block;border:1px solid var(--te);color:var(--te);border-radius:99px;padding:2px 12px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+.hero h1 span{background:linear-gradient(90deg,var(--te),var(--bl));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .kv{margin:16px 0 0}.hero .kv div{background:#0c132299}.hero .kv b{color:var(--te)}
+@keyframes pop{from{opacity:0;transform:translateY(8px)}}.chip{animation:pop .4s both}
+.docs{padding:6px 5vw 26px}.docs h2{margin:18px 0 10px;font-size:20px}.dg{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.card h3{margin:0 0 6px;color:var(--te);font-size:15px}.card p{margin:0;color:var(--mu);font-size:14px}
+</style></head><body>
+<header class="hero"><span class="badge">Compiler Design Project</span>
+<h1><span>MLPipe</span> — Compiler for End-to-End ML Pipelines</h1>
+<p class="sub">Write an ML workflow in a small DSL and watch it pass through every compiler phase — lexing, parsing, semantic analysis, optimization, code generation and execution — live in your browser.</p>
+<div class="kv"><div><b>6</b>compiler phases</div><div><b>4</b>ML models</div><div><b>3</b>optimizer passes</div><div><b>8</b>inspector views</div><div><b>0</b>servers needed</div></div></header>
+<div class="stages" id="stages"></div>
+<main>
+<section class="card"><div class="row"><select id="sample"></select><button class="run" id="run">▶ Compile &amp; Run</button><small>Ctrl+Enter</small></div>
+<textarea id="src" spellcheck="false"></textarea>
+<p class="mu" style="font-size:13px;margin:8px 0 0">Dataset columns: <code>age, income, tenure</code> (numeric) · <code>city</code> (categorical) · target <code>churn</code>. Models: random_forest, decision_tree, logistic_regression, knn.</p></section>
+<section class="card"><div id="diag"></div><div class="tabs" id="tabs"></div><div id="pane"></div></section>
+</main>
+<section class="docs"><h2>How the compiler works</h2><div class="dg">
+<div class="card"><h3>1 · Lexer</h3><p>Scans characters into six token classes with line and column positions; rejects illegal characters and unterminated strings.</p></div>
+<div class="card"><h3>2 · Parser</h3><p>Recursive descent, one function per grammar rule, building a typed AST. Stops at the first syntax error with a caret.</p></div>
+<div class="card"><h3>3 · Semantic analysis</h3><p>Checks stage order, column existence and types, split validity, model hyperparameters and metrics, then adds warnings.</p></div>
+<div class="card"><h3>4 · IR optimizer</h3><p>Fuses preprocess blocks, removes duplicate steps and enforces fill → scale → encode ordering.</p></div>
+<div class="card"><h3>5 · Code generation</h3><p>Emits a scikit-learn script using ColumnTransformer and Pipeline, so preprocessing is fitted on training data only.</p></div>
+<div class="card"><h3>6 · Execution</h3><p>Trains and evaluates the IR in the browser on a seeded synthetic dataset; Compare models re-runs it with all four models.</p></div></div>
+<h2>Grammar</h2><div class="card"><pre>program    ::= pipeline
+pipeline   ::= 'pipeline' ID '{' stmt* '}'
+stmt       ::= load | preprocess | split | model | 'train' ';' | evaluate
+load       ::= 'load' 'data' STRING ';'
+preprocess ::= 'preprocess' '{' ( ('fill_missing'|'scale'|'encode') ID ';' )* '}'
+split      ::= 'split' 'train' NUM 'test' NUM ';'
+model      ::= 'model' ID '{' ( ID '=' NUM ';' )* '}'
+evaluate   ::= 'evaluate' 'metrics' '[' ID (',' ID)* ']' ';'</pre></div></section>
+<footer>Pipeline: Source → Lexer → Parser → AST → Semantic analysis → IR optimizer → Python (scikit-learn) code generation → execution. Everything runs client-side; no server.</footer>
+
+<script id="core">
+const KW=new Set("pipeline load data preprocess fill_missing scale encode split train test model evaluate metrics".split(" "));
+class CErr extends Error{constructor(m,l,c,ph){super(m);this.l=l;this.c=c;this.ph=ph}}
+function lex(src){const t=[];let i=0,l=1,c=1;const adv=()=>{if(src[i]=="\n"){l++;c=1}else c++;i++};
+while(i<src.length){const ch=src[i];if(/\s/.test(ch)){adv();continue}
+if(ch=="/"&&src[i+1]=="/"){while(i<src.length&&src[i]!="\n")adv();continue}
+const L=l,C=c,push=(ty,v)=>t.push({t:ty,v,l:L,c:C});
+if(ch=='"'){adv();let s="";while(i<src.length&&src[i]!='"'){s+=src[i];adv()}if(i>=src.length)throw new CErr("unterminated string literal",L,C,"Lexer");adv();push("STRING",s);continue}
+if(/\d/.test(ch)){let s="";while(/\d/.test(src[i]||""))s+=src[i],adv();push("NUMBER",s);continue}
+if(/[A-Za-z_]/.test(ch)){let s="";while(/\w/.test(src[i]||""))s+=src[i],adv();push(KW.has(s)?"KEYWORD":"IDENTIFIER",s);continue}
+if(ch=="="){adv();push("OPERATOR","=");continue}
+if("{}[];,".includes(ch)){adv();push("SYMBOL",ch);continue}
+throw new CErr("unexpected character '"+ch+"'",L,C,"Lexer")}
+t.push({t:"EOF",v:"",l,c});return t}
+function parse(T){let p=0;const cur=()=>T[p],is=(t,v)=>cur().t==t&&(v==null||cur().v==v);
+const err=m=>{const k=cur();throw new CErr(m+" (found "+(k.v||"end of file")+")",k.l,k.c,"Parser")};
+const ex=(t,v)=>{if(is(t,v))return T[p++];err("expected "+(v||t.toLowerCase()))};
+function stmt(){const k=cur();if(k.t!="KEYWORD")err("expected a statement keyword");const l=k.l;p++;
+switch(k.v){
+case"load":{ex("KEYWORD","data");const f=ex("STRING").v;ex("SYMBOL",";");return{type:"Load",file:f,l}}
+case"preprocess":{ex("SYMBOL","{");const steps=[];while(!is("SYMBOL","}")){if(is("EOF"))err("unmatched '{' in preprocess block");const o=cur();if(!["fill_missing","scale","encode"].includes(o.v))err("expected fill_missing, scale or encode");p++;const col=ex("IDENTIFIER").v;ex("SYMBOL",";");steps.push({op:o.v,col,l:o.l})}ex("SYMBOL","}");return{type:"Preprocess",steps,l}}
+case"split":{ex("KEYWORD","train");const a=+ex("NUMBER").v;ex("KEYWORD","test");const b=+ex("NUMBER").v;ex("SYMBOL",";");return{type:"Split",train:a,test:b,l}}
+case"model":{const m=ex("IDENTIFIER").v;ex("SYMBOL","{");const params={};while(!is("SYMBOL","}")){if(is("EOF"))err("unmatched '{' in model block");const n=ex("IDENTIFIER").v;ex("OPERATOR","=");params[n]=+ex("NUMBER").v;ex("SYMBOL",";")}ex("SYMBOL","}");return{type:"Model",model:m,params,l}}
+case"train":{ex("SYMBOL",";");return{type:"Train",l}}
+case"evaluate":{ex("KEYWORD","metrics");ex("SYMBOL","[");const ms=[];if(!is("SYMBOL","]")){ms.push(ex("IDENTIFIER").v);while(is("SYMBOL",",")){p++;ms.push(ex("IDENTIFIER").v)}}ex("SYMBOL","]");ex("SYMBOL",";");return{type:"Evaluate",metrics:ms,l}}
+default:p--;err("unexpected keyword '"+k.v+"'")}}
+ex("KEYWORD","pipeline");const name=ex("IDENTIFIER").v;ex("SYMBOL","{");const body=[];
+while(!is("SYMBOL","}")){if(is("EOF"))err("unmatched '{' in pipeline block");body.push(stmt())}
+ex("SYMBOL","}");ex("EOF");return{type:"Pipeline",name,body}}
+function show(a){const L=["Pipeline("+a.name+")"];a.body.forEach(s=>{const d={Load:()=>`Load(file="${s.file}")`,Preprocess:()=>"Preprocess",Split:()=>`Split(train=${s.train}, test=${s.test})`,Model:()=>`Model(${s.model}) {${Object.entries(s.params).map(([k,v])=>k+"="+v).join(", ")}}`,Train:()=>"Train",Evaluate:()=>`Evaluate[${s.metrics.join(", ")}]`}[s.type]();L.push("  ├─ "+d);if(s.steps)s.steps.forEach(x=>L.push(`  │    └─ ${x.op}(${x.col})`))});return L.join("\n")}
+const SCH={age:"num",income:"num",tenure:"num",city:"cat"},MISS=new Set(["age"]);
+const MODELS={random_forest:["trees","depth"],decision_tree:["depth"],logistic_regression:["epochs"],knn:["k"]},METS=["accuracy","precision","recall","f1"];
+function analyze(ast){const E=[],W=[],P=[],b=ast.body,e=(m,l)=>E.push({m,l}),w=(m,l)=>W.push({m,l});
+const grp=(n,f)=>{const k=E.length;f();if(E.length==k)P.push(n)};const RK={Load:0,Preprocess:1,Split:2,Model:3,Train:4,Evaluate:5};
+grp("Stage ordering: load → preprocess → split → model → train → evaluate",()=>{let last=-1,lt="";b.forEach(s=>{const r=RK[s.type];if(r<last)e(`'${s.type.toLowerCase()}' cannot appear after '${lt}'`,s.l);else{last=r;lt=s.type.toLowerCase()}});
+["Load","Split","Model","Train"].forEach(t=>{const c=b.filter(s=>s.type==t);if(!c.length)e(`missing required '${t.toLowerCase()}' statement`,1);if(c.length>1)e(`duplicate '${t.toLowerCase()}' statement`,c[1].l)});
+if(b.filter(s=>s.type=="Evaluate").length>1)e("duplicate 'evaluate' statement",1)});
+grp("Columns exist and operations match column types",()=>b.filter(s=>s.type=="Preprocess").forEach(p=>p.steps.forEach(s=>{const t=SCH[s.col];if(!t)e(`unknown column '${s.col}' (available: ${Object.keys(SCH).join(", ")})`,s.l);else if(s.op=="scale"&&t!="num")e(`cannot scale categorical column '${s.col}'`,s.l);else if(s.op=="encode"&&t!="cat")e(`cannot encode numeric column '${s.col}'`,s.l)})));
+grp("Train/test split is valid (sums to 100, both > 0)",()=>b.filter(s=>s.type=="Split").forEach(s=>{if(s.train+s.test!=100)e(`split must sum to 100 (got ${s.train}+${s.test}=${s.train+s.test})`,s.l);if(s.train<=0||s.test<=0)e("train and test percentages must be positive",s.l)}));
+grp("Model and hyperparameters are supported",()=>b.filter(s=>s.type=="Model").forEach(s=>{if(!MODELS[s.model])e(`unknown model '${s.model}' (supported: ${Object.keys(MODELS).join(", ")})`,s.l);else Object.entries(s.params).forEach(([k,v])=>{if(!MODELS[s.model].includes(k))e(`'${s.model}' has no parameter '${k}' (valid: ${MODELS[s.model].join(", ")})`,s.l);else if(v<=0)e(`parameter '${k}' must be positive`,s.l)})}));
+grp("Evaluation metrics are supported",()=>b.filter(s=>s.type=="Evaluate").forEach(s=>s.metrics.forEach(m=>{if(!METS.includes(m))e(`unknown metric '${m}' (supported: ${METS.join(", ")})`,s.l)})));
+if(!E.length){const ld=b.find(s=>s.type=="Load"),md=b.find(s=>s.type=="Model"),ops={};b.filter(s=>s.type=="Preprocess").forEach(p=>p.steps.forEach(s=>(ops[s.col]=ops[s.col]||[]).push(s.op)));
+if(ld.file!="customer.csv")w(`'${ld.file}' cannot be read in the browser; the built-in customer dataset is used instead`,ld.l);
+for(const c in SCH){const o=ops[c]||[];if(SCH[c]=="num"&&MISS.has(c)&&!o.includes("fill_missing"))w(`column '${c}' has missing values and is not filled; NaNs are treated as 0`,md.l);
+if(SCH[c]=="cat"&&!o.includes("encode"))w(`categorical column '${c}' is not encoded and will be dropped from the features`,md.l);
+if(SCH[c]=="num"&&!o.includes("scale")&&["knn","logistic_regression"].includes(md.model))w(`'${c}' is not scaled but ${md.model} is scale-sensitive`,md.l)}
+if(!b.some(s=>s.type=="Evaluate"))w("no 'evaluate' statement; no metrics will be reported",1)}
+return{E,W,P}}
+function toIR(a){const b=a.body,g=t=>b.find(s=>s.type==t),bl=b.filter(s=>s.type=="Preprocess");
+return{name:a.name,load:g("Load").file,blocks:bl.length,prep:bl.flatMap(p=>p.steps.map(s=>({op:s.op,col:s.col}))),split:{train:g("Split").train,test:g("Split").test},model:{type:g("Model").model,params:g("Model").params},metrics:(g("Evaluate")||{metrics:[]}).metrics}}
+function optimize(ir0){const ir=JSON.parse(JSON.stringify(ir0)),log=[];
+if(ir.blocks>1)log.push(`Block fusion: ${ir.blocks} preprocess blocks merged into a single data pass`);ir.blocks=Math.min(ir.blocks,1);
+const seen=new Set(),n0=ir.prep.length;ir.prep=ir.prep.filter(s=>{const k=s.op+":"+s.col;if(seen.has(k))return false;seen.add(k);return true});
+if(ir.prep.length<n0)log.push(`Redundant-step elimination: removed ${n0-ir.prep.length} duplicate step(s)`);
+const R={fill_missing:0,scale:1,encode:2},k0=ir.prep.map(s=>s.op+s.col).join();ir.prep.sort((a,b)=>R[a.op]-R[b.op]);
+if(ir.prep.map(s=>s.op+s.col).join()!=k0)log.push("Canonical reordering: fill_missing → scale → encode (imputing first keeps scaling statistics NaN-free)");
+if(!log.length)log.push("No transformation applicable — IR is already optimal");return{ir,log}}
+function gen(ir){const cols={};ir.prep.forEach(s=>(cols[s.col]=cols[s.col]||[]).push(s.op));const M=ir.model,p=M.params;
+const C={random_forest:["ensemble","RandomForestClassifier",`n_estimators=${p.trees||50}, max_depth=${p.depth||5}, random_state=42`],decision_tree:["tree","DecisionTreeClassifier",`max_depth=${p.depth||5}, random_state=42`],logistic_regression:["linear_model","LogisticRegression",`max_iter=${p.epochs||200}`],knn:["neighbors","KNeighborsClassifier",`n_neighbors=${p.k||5}`]}[M.type];
+const tr=Object.entries(cols).filter(([c,o])=>SCH[c]=="num"||o.includes("encode")).map(([c,o])=>{const s=[];if(o.includes("fill_missing"))s.push(`("impute", SimpleImputer(strategy="${SCH[c]=="num"?"mean":"most_frequent"}"))`);if(o.includes("scale"))s.push('("scale", StandardScaler())');if(o.includes("encode"))s.push('("encode", OneHotEncoder(handle_unknown="ignore"))');return `        ("${c}", Pipeline([${s.join(", ")}]), ["${c}"]),`});
+const dr=Object.keys(SCH).filter(c=>SCH[c]=="cat"&&!(cols[c]||[]).includes("encode"));if(dr.length)tr.push(`        ("drop_unencoded", "drop", ${JSON.stringify(dr)}),`);
+const F={accuracy:"accuracy_score",precision:"precision_score",recall:"recall_score",f1:"f1_score"};
+return[`# Generated by MLPipe compiler from pipeline "${ir.name}"`,"import pandas as pd","from sklearn.model_selection import train_test_split","from sklearn.impute import SimpleImputer","from sklearn.preprocessing import StandardScaler, OneHotEncoder","from sklearn.compose import ColumnTransformer","from sklearn.pipeline import Pipeline",`from sklearn.${C[0]} import ${C[1]}`,"from sklearn import metrics","",`df = pd.read_csv("${ir.load}")`,'X, y = df.drop(columns=["churn"]), df["churn"]',`X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=${ir.split.test/100}, random_state=42)`,"","preprocess = ColumnTransformer([",...tr,'], remainder="passthrough")',"",`model = Pipeline([("prep", preprocess), ("clf", ${C[1]}(${C[2]}))])`,"model.fit(X_train, y_train)","pred = model.predict(X_test)",...ir.metrics.map(m=>`print("${m}:", round(metrics.${F[m]}(y_test, pred), 3))`)].join("\n")}
+const rng=s=>()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+function shuffle(a,r){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function dataset(){const r=rng(7),C=["Chennai","Mumbai","Delhi","Pune"],D=[];for(let i=0;i<500;i++){const age=18+r()*52,inc=15000+r()*85000,ten=r()*10,ci=Math.floor(r()*4);
+const z=(40-age)*.05+(45000-inc)/25000+(3-ten)*.35+(ci==0?.9:0)+(r()-.5)*1.4;D.push({age:r()<.08?null:age,income:inc,tenure:ten,city:C[ci],churn:r()<1/(1+Math.exp(-z))?1:0})}return D}
+function tree(X,y,d,fs){const n=y.length,pos=y.reduce((a,b)=>a+b,0),leaf=()=>({p:pos*2>=n?1:0});if(d==0||pos==0||pos==n||n<4)return leaf();let best=null;
+const g=(a,b)=>{const q=b/a;return a*2*q*(1-q)};for(const j of fs){const vs=X.map(r=>r[j]).sort((a,b)=>a-b);for(let q=1;q<10;q++){const th=vs[Math.floor(q*n/10)];let ln=0,lp=0;X.forEach((r,i)=>{if(r[j]<=th){ln++;lp+=y[i]}});if(!ln||ln==n)continue;const s=g(ln,lp)+g(n-ln,pos-lp);if(!best||s<best.s)best={s,j,th}}}
+if(!best)return leaf();const L=[],R=[];X.forEach((r,i)=>(r[best.j]<=best.th?L:R).push(i));const sub=ix=>[ix.map(i=>X[i]),ix.map(i=>y[i])];
+return{j:best.j,th:best.th,l:tree(...sub(L),d-1,fs),r:tree(...sub(R),d-1,fs)}}
+const tp=(t,x)=>t.p!==undefined?t.p:tp(x[t.j]<=t.th?t.l:t.r,x);
+function execute(ir){const D=dataset(),r=rng(42);shuffle(D,r);const nt=Math.round(D.length*ir.split.train/100),tr=D.slice(0,nt),te=D.slice(nt),ops=c=>ir.prep.filter(s=>s.col==c).map(s=>s.op),F=[];
+for(const c in SCH){const o=ops(c);if(SCH[c]=="num"){const v=tr.map(x=>x[c]).filter(x=>x!=null),mu=v.reduce((a,b)=>a+b,0)/v.length,sd=Math.sqrt(v.reduce((a,b)=>a+(b-mu)**2,0)/v.length)||1,fill=o.includes("fill_missing"),sc=o.includes("scale");F.push({n:c+(sc?" (scaled)":""),f:x=>{let q=x[c];if(q==null)q=fill?mu:0;return sc?(q-mu)/sd:q}})}
+else if(o.includes("encode"))[...new Set(tr.map(x=>x[c]))].sort().forEach(k=>F.push({n:c+"="+k,f:x=>x[c]==k?1:0}))}
+const X=a=>a.map(x=>F.map(g=>g.f(x))),Xa=X(tr),Xb=X(te),ya=tr.map(x=>x.churn),yb=te.map(x=>x.churn),p=ir.model.params,m=F.length;let pred;
+if(ir.model.type=="logistic_regression"){const w=Array(m).fill(0);let b=0;const sg=z=>1/(1+Math.exp(-Math.max(-30,Math.min(30,z))));for(let e=0;e<(p.epochs||200);e++){const gw=Array(m).fill(0);let gb=0;Xa.forEach((x,i)=>{const d=sg(x.reduce((s,v,j)=>s+v*w[j],b))-ya[i];x.forEach((v,j)=>gw[j]+=d*v);gb+=d});w.forEach((_,j)=>w[j]-=.1*gw[j]/Xa.length);b-=.1*gb/Xa.length}pred=Xb.map(x=>sg(x.reduce((s,v,j)=>s+v*w[j],b))>=.5?1:0)}
+else if(ir.model.type=="decision_tree"){const t=tree(Xa,ya,p.depth||5,[...Array(m).keys()]);pred=Xb.map(x=>tp(t,x))}
+else if(ir.model.type=="random_forest"){const ks=Math.max(1,Math.round(Math.sqrt(m))),ts=[...Array(p.trees||50)].map(()=>{const ix=Xa.map(()=>Math.floor(r()*Xa.length));return tree(ix.map(i=>Xa[i]),ix.map(i=>ya[i]),p.depth||5,shuffle([...Array(m).keys()],r).slice(0,ks))});pred=Xb.map(x=>ts.reduce((s,t)=>s+tp(t,x),0)*2>=ts.length?1:0)}
+else{const k=p.k||5;pred=Xb.map(x=>{const d=Xa.map((t,i)=>[t.reduce((s,v,j)=>s+(v-x[j])**2,0),ya[i]]).sort((a,b)=>a[0]-b[0]).slice(0,k);return d.reduce((s,v)=>s+v[1],0)*2>=k?1:0})}
+let tpn=0,fp=0,fn=0,tn=0;pred.forEach((q,i)=>{if(q&&yb[i])tpn++;else if(q)fp++;else if(yb[i])fn++;else tn++});
+const pr=tpn/(tpn+fp)||0,rc=tpn/(tpn+fn)||0,all={accuracy:(tpn+tn)/pred.length,precision:pr,recall:rc,f1:2*pr*rc/(pr+rc)||0},mt={};ir.metrics.forEach(k=>mt[k]=all[k]);
+return{n:D.length,ntr:tr.length,nte:te.length,feats:F.map(f=>f.n),mt,cm:{tp:tpn,fp,fn,tn}}}
+</script>
+<script>
+const $=id=>document.getElementById(id),esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const SAMPLES={
+"✅ Churn prediction (random forest)":`pipeline churn_prediction {
+    load data "customer.csv";
+
+    preprocess {
+        fill_missing age;
+        scale income;
+        encode city;
+    }
+
+    split train 80 test 20;
+
+    model random_forest {
+        trees = 100;
+        depth = 6;
+    }
+
+    train;
+    evaluate metrics [accuracy, precision, recall, f1];
+}`,
+"⚡ Optimizer demo (messy but valid)":`pipeline messy_but_valid {
+    load data "customer.csv";
+    preprocess { encode city; scale income; }
+    preprocess { fill_missing age; scale age; scale income; scale tenure; }
+    split train 75 test 25;
+    model logistic_regression { epochs = 300; }
+    train;
+    evaluate metrics [accuracy, f1];
+}`,
+"🧪 kNN without scaling (warnings)":`pipeline knn_unscaled {
+    load data "customer.csv";
+    preprocess { fill_missing age; encode city; }
+    split train 80 test 20;
+    model knn { k = 7; }
+    train;
+    evaluate metrics [accuracy, recall];
+}`,
+"❌ Syntax error (missing semicolon)":`pipeline broken {
+    load data "customer.csv"
+    train;
+}`,
+"❌ Semantic errors":`pipeline bad_semantics {
+    load data "customer.csv";
+    preprocess { scale city; encode income; fill_missing salary; }
+    split train 70 test 20;
+    model svm { trees = 10; }
+    train;
+    evaluate metrics [accuracy, auc];
+}`};
+const PH=["Lexer","Parser","Semantic","Optimizer","CodeGen","Runtime"],TABS=["Tokens","AST","Semantic","Optimized IR","Python code","Results","Pipeline graph","Compare models"];
+let tab=5,R={};
+$("sample").innerHTML=Object.keys(SAMPLES).map(k=>`<option>${esc(k)}</option>`).join("");
+$("sample").onchange=()=>{$("src").value=SAMPLES[$("sample").value];compile()};
+$("run").onclick=compile;$("src").addEventListener("keydown",e=>{if(e.ctrlKey&&e.key=="Enter")compile()});
+function caret(src,l,c){const ln=src.split("\n")[l-1]||"";return `<pre style="margin-top:6px;max-height:none">${esc(ln)}\n${" ".repeat(Math.max(0,c-1))}^</pre>`}
+let T=[];
+function compile(){const src=$("src").value,st=PH.map(()=>""),o={};T=[];let diag="";const tm=(i,f)=>{const a=performance.now(),r=f();T[i]=performance.now()-a;return r};
+try{o.tok=tm(0,()=>lex(src));st[0]="ok";o.ast=tm(1,()=>parse(o.tok));st[1]="ok";o.sem=tm(2,()=>analyze(o.ast));
+if(o.sem.E.length){st[2]="fail";diag=`<div class="diag err"><b>Semantic analysis failed</b> — ${o.sem.E.length} error(s). See the Semantic tab.</div>`;tab=2}
+else{st[2]="ok";o.opt=tm(3,()=>optimize(toIR(o.ast)));st[3]="ok";o.py=tm(4,()=>gen(o.opt.ir));st[4]="ok";o.res=tm(5,()=>execute(o.opt.ir));st[5]="ok";
+diag=`<div class="diag good"><b>Compiled successfully</b> — all 6 phases passed${o.sem.W.length?` with ${o.sem.W.length} warning(s)`:""}.</div>`;if(R.err||(R.sem&&R.sem.E.length))tab=5}}
+catch(e){if(!(e instanceof CErr))throw e;st[PH.indexOf(e.ph)]="fail";diag=`<div class="diag err"><b>${e.ph} error</b> at line ${e.l}, column ${e.c}: ${esc(e.message)}${caret(src,e.l,e.c)}</div>`;o.err=e;tab=e.ph=="Lexer"?0:1}
+R=o;$("stages").innerHTML=PH.map((p,i)=>`<span class="chip ${st[i]}" style="animation-delay:${i*90}ms">${st[i]=="ok"?"✓ ":st[i]=="fail"?"✗ ":""}${p}${T[i]!=null?` · ${T[i].toFixed(1)} ms`:""}</span>`).join("");$("diag").innerHTML=diag;render()}
+function dl(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([R.py],{type:"text/x-python"}));a.download="pipeline.py";a.click()}
+function cm(c){const t=c.tp+c.fp+c.fn+c.tn,b=(n,l,g)=>`<div style="background:${g?"rgba(76,190,137,":"rgba(226,94,105,"}${.15+.6*n/t});padding:10px;border-radius:8px;text-align:center"><b style="font-size:20px">${n}</b><br><small>${l}</small></div>`;return `<p class="mu" style="margin-bottom:4px">Confusion matrix</p><div style="display:grid;grid-template-columns:repeat(2,minmax(0,150px));gap:6px;margin-bottom:10px">${b(c.tn,"true neg",1)}${b(c.fp,"false pos",0)}${b(c.fn,"false neg",0)}${b(c.tp,"true pos",1)}</div>`}
+function graph(ir){const C=[[["load",ir.load,"#3FC4D3"]],ir.prep.map(s=>[s.op,s.col,{fill_missing:"#EFA34E",scale:"#487EE0",encode:"#4CBE89"}[s.op]]),[["split",ir.split.train+" / "+ir.split.test+" %","#E25E69"]],[["model",ir.model.type,"#3FC4D3"]],[["train","fit","#4CBE89"]],ir.metrics.map(m=>["metric",m,"#EFA34E"])].filter(c=>c.length);
+const W=1000,cw=W/C.length,H=Math.max(...C.map(c=>c.length))*56+30;let ed="",nd="";const pos=C.map((c,i)=>c.map((n,j)=>({x:cw*i+cw/2,y:H/2+(j-(c.length-1)/2)*56,n})));
+pos.forEach((c,i)=>{if(i)pos[i-1].forEach(a=>c.forEach(b=>ed+=`<path d="M${a.x+65} ${a.y}C${a.x+110} ${a.y} ${b.x-110} ${b.y} ${b.x-65} ${b.y}" fill="none" stroke="#3A4967" stroke-width="1.5"/>`));c.forEach(p=>nd+=`<rect x="${p.x-65}" y="${p.y-20}" width="130" height="40" rx="9" fill="#0c1322" stroke="${p.n[2]}" stroke-width="1.5"/><text x="${p.x}" y="${p.y-4}" text-anchor="middle" fill="${p.n[2]}" font-size="10" font-weight="700">${p.n[0].toUpperCase()}</text><text x="${p.x}" y="${p.y+11}" text-anchor="middle" fill="#dce4f0" font-size="11">${esc(p.n[1])}</text>`)});
+return `<p class="mu">Optimized IR as a dataflow graph — each preprocessing step is a per-column branch.</p><svg viewBox="0 0 ${W} ${H}" style="width:100%;font-family:ui-monospace,monospace">${ed}${nd}</svg>`}
+const CC={};
+function cmp(ir){const k=JSON.stringify([ir.prep,ir.split]);if(!CC[k])CC[k]=Object.keys(MODELS).map(m=>[m,execute({...ir,model:{type:m,params:{}},metrics:METS}).mt]);
+return `<p class="mu">Same preprocessing and split, default hyperparameters. Highlighted row = the model in your program.</p><table><tr><th>Model</th>${METS.map(m=>`<th>${m}</th>`).join("")}</tr>${CC[k].map(([m,v])=>`<tr style="${m==ir.model.type?"background:#3fc4d31a":""}"><td>${m}</td>${METS.map(x=>`<td><div class="bar"><i style="width:${v[x]*100}%"></i></div>${v[x].toFixed(3)}</td>`).join("")}</tr>`).join("")}</table>`}
+function render(){$("tabs").innerHTML=TABS.map((t,i)=>`<button class="${i==tab?"on":""}" onclick="tab=${i};render()">${t}</button>`).join("");const o=R,NA='<p class="mu">Not reached — fix the error above first.</p>';let h="";
+if(tab==0)h=o.tok?`<table><tr><th>#</th><th>Type</th><th>Value</th><th>Line:Col</th></tr>${o.tok.map((t,i)=>`<tr><td>${i}</td><td class="t-${t.t}">${t.t}</td><td>${esc(t.v)}</td><td>${t.l}:${t.c}</td></tr>`).join("")}</table>`:NA;
+if(tab==1)h=o.ast?`<pre>${esc(show(o.ast))}</pre>`:NA;
+if(tab==2)h=o.sem?`${o.sem.E.map(x=>`<p class="er">✗ line ${x.l}: ${esc(x.m)}</p>`).join("")}${o.sem.W.map(x=>`<p class="wn">⚠ line ${x.l}: ${esc(x.m)}</p>`).join("")}${o.sem.P.map(x=>`<p class="ok">✓ ${esc(x)}</p>`).join("")}`:NA;
+if(tab==3)h=o.opt?`<p><b>Optimization passes</b></p>${o.opt.log.map(x=>`<p class="ok">• ${esc(x)}</p>`).join("")}<p><b>Optimized IR</b></p><pre>${esc(JSON.stringify(o.opt.ir,null,2))}</pre>`:NA;
+if(tab==4)h=o.py?`<div class="row"><button onclick="navigator.clipboard.writeText(R.py)">Copy code</button><button onclick="dl()">Download .py</button><small>scikit-learn script generated from the IR</small></div><pre>${esc(o.py)}</pre>`:NA;
+if(tab==5)h=o.res?`<div class="kv"><div><b>${o.res.ntr}</b>train rows</div><div><b>${o.res.nte}</b>test rows</div><div><b>${o.res.feats.length}</b>features</div></div>${Object.entries(o.res.mt).map(([k,v])=>`<div class="met"><span>${k}</span><div class="bar"><i style="width:${(v*100).toFixed(1)}%"></i></div><b>${v.toFixed(3)}</b></div>`).join("")}${cm(o.res.cm)}<p class="mu">Features: ${esc(o.res.feats.join(", "))}</p><p class="mu" style="font-size:12.5px">Executed in-browser on a built-in synthetic customer dataset (500 rows, seeded). Preprocessing statistics are fitted on the training split only.</p>`:NA;
+if(tab==6)h=o.opt?graph(o.opt.ir):NA;
+if(tab==7)h=o.opt?cmp(o.opt.ir):NA;
+$("pane").innerHTML=h}
+$("src").value=SAMPLES[$("sample").value];compile();
+</script></body></html>
